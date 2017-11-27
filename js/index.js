@@ -20,18 +20,23 @@ $(function() {
             'disableMouse': true
         },
         afterLoad: function(anchorLink, index) {
-            console.log(index);
-
-            $('.top-nav .nav-item li').eq(index-1).addClass('cur').siblings('li').removeClass('cur');
+            $('.top-nav .nav-item li').eq(index - 1).addClass('cur').siblings('li').removeClass('cur');
             /*如果当前在第四屏*/
             if (index == 4) {
                 $('.concept-item-box').removeClass('active');
                 $('.concept-item-box-1').addClass('active');
                 PAGE.coneptChange();
+            } else {
+                clearTimeout(PAGE.coneptTimer);
+                $('.concept-item-box').removeClass('active');
+                $('.concept-item-box-1').show();
             }
 
             if (index == 5) {
-                PAGE.aboutTab();
+                $('.about-us-info-data-1').show().addClass('active');
+                $('.about-us-info-data-2').hide().removeClass('active');
+            } else {
+                $('.about-us-info-data-1,.about-us-info-data-2').hide().removeClass('active');
             }
 
             /*给浅色背景图区域加深导航条背景色*/
@@ -78,7 +83,7 @@ $(function() {
     });
 
     $('.nav-item li').on('click', function() {
-        var modIndex=$(this).index()+1;
+        var modIndex = $(this).index() + 1;
         $(this).addClass('cur').siblings('li').removeClass('cur');
         $.fn.fullpage.moveTo(modIndex);
     });
@@ -314,10 +319,36 @@ $(function() {
         coneptTimer: null,
         coneptChange: function() {
             var This = this,
-                curItemIndex=0;
+                curItemIndex = 0,
+                changeTimer = null,
+                maxItemLen = $('.concept-item-box').length - 1;
+
+            setTimeout(function() {
+                $('.concept-cont .concept-item-box').eq(0).addClass('fade-leave-right').removeClass('active');
+                setTimeout(function() {
+                    $('.concept-cont .concept-item-box').eq(0).hide().removeClass('active fade-leave-right');
+                    $('.concept-cont .concept-item-box').eq(1).show().addClass('active').removeClass('fade-leave-right');
+                }, 1600);
+            }, 4000);
+
             This.coneptTimer = setInterval(function() {
-                //$('.concept-item-box').removeClass('active').addClass('fade-leave-right');
-            }, 5000);
+                curItemIndex++, curItemIndex > maxItemLen && (curItemIndex = 0);
+                clearTimeout(changeTimer);
+                if (curItemIndex == 1) {
+                    $('.concept-cont .concept-item-box').eq(0).addClass('fade-leave-right').removeClass('active');
+                    changeTimer = setTimeout(function() {
+                        $('.concept-cont .concept-item-box').eq(0).hide().removeClass('active fade-leave-right');
+                        $('.concept-cont .concept-item-box').eq(1).show().addClass('active').removeClass('fade-leave-right');
+                    }, 1600);
+                } else {
+                    $('.concept-cont .concept-item-box').eq(1).addClass('fade-leave-right').removeClass('active');
+                    changeTimer = setTimeout(function() {
+                        $('.concept-cont .concept-item-box').eq(1).hide().removeClass('active fade-leave-right');
+                        $('.concept-cont .concept-item-box').eq(0).show().addClass('active').removeClass('fade-leave-right');
+                    }, 1600);
+                }
+            }, 9000);
+
         },
         // 招聘信息分页
         jobPage: function() {
@@ -379,9 +410,6 @@ $(function() {
         },
         /*关于我们*/
         aboutTab: function() {
-            $('.about-us-info-data-1').show().addClass('active');
-            $('.about-us-info-data-2').hide().removeClass('active');
-
             $(document).on('click', '.about-us-box .next-btn', function() {
                 $('.about-us-info-data-1').hide().removeClass('active');
                 $('.about-us-info-data-2').show().addClass('active');
@@ -391,9 +419,157 @@ $(function() {
                 $('.about-us-info-data-1').show().addClass('active');
             });
         },
+        getPureT: function(str) {
+            str = str.replace(/<\/?[^>]*>/g, ''); //去除HTML tag
+            str = str.replace(/[ | ]*\n/g, '\n'); //去除行尾空白
+            return str;
+        },
+        // 提交验证
+        submitCheck: function() {
+            var self = this;
+
+            $('#user-name').on('blur', function() {
+                var userName = $('#user-name').val();
+                if (userName == '') {
+                    $('.name-item .fill-tips').html("请输入您的姓名");
+                } else {
+                    if (userName.length < 2) {
+                        $('.name-item .fill-tips').html("最少输入2个字");
+                    } else {
+                        $('.name-item .fill-tips').html("");
+                    }
+                }
+            });
+
+            $('#user-phone').on('blur', function() {
+                var phoneNum = $('#user-phone').val();
+                if (phoneNum == '') {
+                    $('.phone-item .fill-tips').html("请输入您的手机号码");
+                } else {
+                    if (!(/^1[3|4|5|7|8][0-9]{9}$/).test(phoneNum)) {
+                        $('.phone-item .fill-tips').html("请输入正确的手机号码");
+                    } else {
+                        $('.phone-item .fill-tips').html("");
+                    }
+                }
+            });
+
+            $('#user-email').on('blur', function() {
+                var emailVal = $('#user-email').val();
+                if (emailVal == '') {
+                    $('.email-item .fill-tips').html("");
+                } else {
+                    if (!(/^[a-z0-9]+([._\\-]*[a-z0-9])*@([a-z0-9]+[-a-z0-9]*[a-z0-9]+.){1,63}[a-z0-9]+$/).test(emailVal)) {
+                        $('.email-item .fill-tips').html("请输入正确的邮箱地址！");
+                    } else {
+                        $('.email-item .fill-tips').html("");
+                    }
+                }
+            });
+
+            $('#user-words').on('blur', function() {
+                var wordCont = $('#user-words').val();
+                if (wordCont == '') {
+                    $('.words-item .fill-tips').html("请写下您的留言");
+                } else {
+                    if (wordCont.length < 8) {
+                        $('.words-item .fill-tips').html('最少输入8个字');
+                    } else {
+                        $('.words-item .fill-tips').html("");
+                    }
+                }
+            });
+
+            $('#submit-btn').click(function() {
+                var userName = $('#user-name').val(),
+                    phoneNum = $('#user-phone').val(),
+                    emailVal = $('#user-email').val(),
+                    wordCont = self.getPureT($('#user-words').val());
+
+                if (userName == '') {
+                    $('.name-item .fill-tips').html("请输入您的姓名");
+                    return false;
+                } else {
+                    if (userName.length < 2) {
+                        $('.name-item .fill-tips').html("最少输入2个字");
+                        return false;
+                    } else {
+                        $('.name-item .fill-tips').html("");
+                    }
+                }
+
+                if (phoneNum == '') {
+                    $('.phone-item .fill-tips').html("请输入您的手机号码");
+                    return false;
+                } else {
+                    if (!(/^1[3|4|5|7|8][0-9]{9}$/).test(phoneNum)) {
+                        $('.phone-item .fill-tips').html("请输入正确的手机号码");
+                        return false;
+                    }
+                }
+
+                if (emailVal !== '') {
+                    if (!(/^[a-z0-9]+([._\\-]*[a-z0-9])*@([a-z0-9]+[-a-z0-9]*[a-z0-9]+.){1,63}[a-z0-9]+$/).test(emailVal)) {
+                        $('.email-item .fill-tips').html("请输入正确的邮箱地址");
+                        return false;
+                    }
+                }
+
+                if (wordCont == '') {
+                    $('.words-item .fill-tips').html("请写下您的留言");
+                    return false;
+                } else {
+                    if (wordCont.length < 8) {
+                        $('.words-item .fill-tips').html("最少输入8个字");
+                        return false;
+                    }
+                }
+                // 此处提交表单操作
+                $.ajax({
+                    url: '//xietest.money.xiaoshushidai.com/ajax-save_contact_info',
+                    data: {
+                        "name": userName,
+                        "phone": phoneNum,
+                        "email": emailVal,
+                        "message": wordCont
+                    },
+                    type: "GET",
+                    dataType: "json",
+                    // jsonp: "jsonCallback",
+                    success: function(res) {
+                        console.log(res);
+                        if (res.status == 1) {
+                            self.submitTip("提交成功，感谢您的参与！", !0);
+                            $('#user-name,#user-phone,#user-email,#user-words').val('');
+                        } else {
+                            self.submitTip(res.msg, !1);
+                        }
+                    },
+                    error: function() {
+                        self.submitTip('提交失败，请稍后再试', !1);
+                    }
+                });
+            });
+        },
+        tipTimer: null,
+        submitTip: function(tipTxt, subStatus) {
+            var self = this;
+            clearTimeout(self.tipTimer);
+            $('.submit-tip').html(tipTxt);
+            if (subStatus) {
+                $('.submit-tip').css('color', '#5BDFB8');
+            } else {
+                $('.submit-tip').css('color', '#f00');
+            }
+            self.tipTimer = setTimeout(function() {
+                $('.submit-tip').html("");
+            }, 4000);
+        },
         init: function() {
             var t = this;
             t.jobPage();
+            t.aboutTab();
+            t.submitCheck();
         }
     }
     PAGE.init();
